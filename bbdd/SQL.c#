@@ -1,0 +1,573 @@
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading.Tasks;
+using MySql.Data.MySqlClient;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
+namespace Ejercicio_Restaurante
+{
+    public static class SQL
+    {
+        //Metodo de conexion con la base de datos
+        public static string DatosDeConexion()
+        {
+            string connectionString =
+                "Server=localhost;" +
+                "Port=3306;" +
+                "Database=restaurante;" +
+                "Uid=root;" +
+                "Pwd=;";
+            return connectionString;
+        }
+
+        public static bool PingDB() 
+        { 
+            bool exito = false;
+            try
+            {
+                using (MySqlConnection connection =
+                    new MySqlConnection(DatosDeConexion()))
+                {
+                    connection.Open();
+                    Console.WriteLine("Conexión exitosa");
+                }
+                exito = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Conexión NO exitosa : " + ex.Message);
+            }
+            return exito;
+        }
+        
+        public static void ConsultarDatos() 
+        { 
+            //Consulta simple sobre la tabla de Cuentas
+
+
+            string connectionString = DatosDeConexion();
+            MySqlConnection connection =
+                    new MySqlConnection(connectionString);
+            try
+            {
+                if (connection.State != ConnectionState.Open)
+                {
+                    connection.Open();
+                    string sql = "SELECT * FROM RECETAS";
+                    //Podemos crear la consulta de la conexión abierta
+                    MySqlCommand command = new MySqlCommand(sql, connection);
+                    MySqlDataReader reader = command.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        int id = reader.GetInt32(0);
+                        string nombre = reader.GetString(1);
+                        string instrucciones = reader.GetString(2);
+                        int tiempo = reader.GetInt32(3);
+
+                        Console.WriteLine("Id: " + id.ToString() + "\n" + nombre + "\n");
+
+                    }
+                    //Cierro lector
+                    connection.Close();
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Conexión NO exitosa : " + ex.Message);
+            }
+            finally
+            {
+                //Asegurarnos de que cerramos la conexion
+                connection.Close();
+            }
+        }
+        
+        public static string[] DevolverListaDeDatos() 
+        { 
+            //Devuelve los datos sobre la tabla de Cuentas
+            //De manera secuencial
+
+
+            string connectionString = DatosDeConexion();
+            List<string> datos = new List<string>();
+            MySqlConnection connection =
+                    new MySqlConnection(connectionString);
+            try
+            {
+                if (connection.State != ConnectionState.Open)
+                {
+                    connection.Open();
+                    //Podemos crear la consulta de la conexión abierta
+                    string sql = "SELECT * FROM recetas_ingredientes";
+                    MySqlCommand command = new MySqlCommand(sql, connection);
+                    MySqlDataReader reader = command.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        datos.Add(reader.GetInt32(0).ToString());
+                        datos.Add(reader.GetInt32(1).ToString());
+                        datos.Add(reader.GetInt32(2).ToString());
+                        datos.Add(reader.GetInt32(3).ToString());
+                    }
+                    //Cierro lector
+                    connection.Close();
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Conexión NO exitosa : " + ex.Message);
+            }
+            finally
+            {
+                //Asegurarnos de que cerramos la conexion
+                connection.Close();
+            }
+            return datos.ToArray();
+        }
+        
+        public static void AnyadirRegistros(string nombre, double saldo, double bitcoins) 
+        { 
+            //Añade datos sobre las Cuentas
+
+
+            string connectionString = DatosDeConexion();
+            MySqlConnection connection =
+                    new MySqlConnection(connectionString);
+            try
+            {
+                if (connection.State != ConnectionState.Open)
+                {
+                    connection.Open();
+                    //Podemos crear la consulta de la conexión abierta
+                    string sql = "INSERT INTO CUENTAS(" +
+                        "nombre_cuenta, " +
+                        "saldo_cuenta, " +
+                        "bitcoin_cuenta) " +
+                        "VALUES " +
+                        "(@nombre, @saldo, @bitcoins);";
+
+                    MySqlCommand command = new MySqlCommand(sql, connection);
+                    //Asignar valores de los parametros
+                    command.Parameters.AddWithValue("@nombre", nombre);
+                    command.Parameters.AddWithValue("@saldo", saldo);
+                    command.Parameters.AddWithValue("@bitcoins", bitcoins);
+                    //Continuar 
+                    //Ejecutar consulta
+                    int filasAfectadas = command.ExecuteNonQuery();
+
+                    //Verificamos si se insertaron datos correctamente (registros)
+                    if (filasAfectadas > 0)
+                    {
+                        Console.WriteLine("Registros insertados correctamente...");
+                    }
+                    else
+                    {
+                        Console.WriteLine("No se pudo insertar registros...");
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Conexión NO exitosa : " + ex.Message);
+            }
+            finally
+            {
+                //Asegurarnos de que cerramos la conexion
+                connection.Close();
+            }
+        }
+       
+        public static void BorrarRegistros(int id) 
+        { 
+            //Borra datos por nombre(ID)
+
+
+            string connectionString = DatosDeConexion();
+            MySqlConnection connection =
+                    new MySqlConnection(connectionString);
+            try
+            {
+                if (connection.State != ConnectionState.Open)
+                {
+                    connection.Open();
+                    //Podemos crear la consulta de la conexión abierta
+                    string sql = "DELETE " +
+                        "FROM CUENTAS " +
+                        "WHERE id_cuenta = " +
+                        "@id;";
+
+                    MySqlCommand command = new MySqlCommand(sql, connection);
+                    //Asignar valores de los parametros
+                    command.Parameters.AddWithValue("@id", id);
+                    //Continuar 
+                    //Ejecutar consulta
+                    int filasAfectadas = command.ExecuteNonQuery();
+
+                    //Verificamos si se insertaron datos correctamente (registros)
+                    if (filasAfectadas > 0)
+                    {
+                        Console.WriteLine(filasAfectadas + " Registros borrados correctamente...");
+                    }
+                    else
+                    {
+                        Console.WriteLine("No se pudo borrar registros...");
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Conexión NO exitosa : " + ex.Message);
+            }
+            finally
+            {
+                //Asegurarnos de que cerramos la conexion
+                connection.Close();
+            }
+        } 
+        
+        public static bool? ActualizarRegistros(string id_origen,string valor_destino) 
+        {
+            //Actualizar datos por nombre(ID)
+            bool? exito = null;
+
+            string connectionString = DatosDeConexion();
+            MySqlConnection connection =
+                    new MySqlConnection(connectionString);
+            try
+            {
+                if (connection.State != ConnectionState.Open)
+                {
+                    connection.Open();
+                    //Podemos crear la consulta de la conexión abierta
+                    string sql = "UPDATE CUENTAS " +
+                        "set saldo_cuenta = @valor_destino " +
+                        "WHERE id_cuenta = @id_origen;";
+
+                    MySqlCommand command = new MySqlCommand(sql, connection);
+                    //Asignar valores de los parametros
+                    command.Parameters.AddWithValue("@id_origen", id_origen);
+                    command.Parameters.AddWithValue("@valor_destino", valor_destino);
+                    //Continuar 
+                    //Ejecutar consulta
+                    int filasAfectadas = command.ExecuteNonQuery();
+
+                    //Verificamos si se insertaron datos correctamente (registros)
+                    if (filasAfectadas > 0)
+                    {
+                        Console.WriteLine(filasAfectadas + " Registros modificados correctamente...");
+                        exito = true;
+                        
+                    }
+                    else
+                    {
+                        Console.WriteLine("No se pudo borrar actualizar los registrados...");
+                        exito = false;
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Conexión NO exitosa : " + ex.Message);
+            }
+            finally
+            {
+                //Asegurarnos de que cerramos la conexion
+                connection.Close();
+            }
+            return exito;
+        }
+        
+        public static bool? EjecutarSQLSimple(string sql) 
+        {
+            //Actualizar datos por nombre(ID)
+            bool? exito = null;
+
+            string connectionString = DatosDeConexion();
+            MySqlConnection connection =
+                    new MySqlConnection(connectionString);
+            try
+            {
+                if (connection.State != ConnectionState.Open)
+                {
+                    connection.Open();
+                    //Podemos crear la consulta de la conexión abierta
+                    MySqlCommand command = new MySqlCommand(sql, connection);
+                    //Continuar 
+                    //Ejecutar consulta
+                    int filasAfectadas = command.ExecuteNonQuery();
+
+                    //Verificamos si se insertaron datos correctamente (registros)
+                    if (filasAfectadas > 0)
+                    {
+                        exito = true;
+                        Console.WriteLine("Filas modificadas: " + filasAfectadas.ToString());
+                    }
+                    else
+                    {
+                        exito = false;
+                        Console.WriteLine("Filas modificadas: " + filasAfectadas.ToString());
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Conexión NO exitosa : " + ex.Message);
+            }
+            finally
+            {
+                //Asegurarnos de que cerramos la conexion
+                connection.Close();
+            }
+            return exito;
+        }
+
+        public static string[] LeerRecetas()
+        {
+            List<string> lista = new List<string>();
+
+            string connectionString = DatosDeConexion();
+            MySqlConnection connection =
+                    new MySqlConnection(connectionString);
+            try
+            {
+                connection.Open();
+                string query = $"SELECT nombre_receta FROM recetas";
+
+                MySqlCommand command = new MySqlCommand(query, connection);
+                MySqlDataReader reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    lista.Add(reader.GetString(0));
+                }
+                
+            }
+            catch (Exception ex)
+            {
+                Menus.PausaMensaje("eRROR: LeerRecetas() " + ex.Message);
+            }
+            finally
+            { 
+                connection.Close(); 
+            }
+
+            return lista.ToArray();
+        }
+        public static int[] IDRecetas()
+        {
+            List<int> lista = new List<int>();
+
+            string connectionString = DatosDeConexion();
+            MySqlConnection connection =
+                    new MySqlConnection(connectionString);
+            try
+            {
+                connection.Open();
+                string query = $"SELECT id_receta FROM recetas";
+
+                MySqlCommand command = new MySqlCommand(query, connection);
+                MySqlDataReader reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    lista.Add(reader.GetInt32(0));
+                }
+                
+            }
+            catch (Exception ex)
+            {
+                Menus.PausaMensaje("eRROR: IDRecetas()" + ex.Message);
+            }
+            finally
+            { 
+                connection.Close(); 
+            }
+
+            return lista.ToArray();
+        }
+        
+        public static bool CargaRecetasPorID(int id)
+        {
+            bool exito = false;
+
+            string connectionString = DatosDeConexion();
+            MySqlConnection connection =
+                    new MySqlConnection(connectionString);
+            try
+            {
+                connection.Open();
+                string query = $"SELECT * FROM recetas where id_receta = " + id.ToString() + ";";
+
+                MySqlCommand command = new MySqlCommand(query, connection);
+                MySqlDataReader reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    //ID
+                    Receta.id = reader.GetInt32(0);
+                    //NOMBRE
+                    Receta.nombre_receta = reader.GetString(1);
+                    //DESCRIPCION
+                    Receta.instrucciones_receta = reader.GetString(2);
+                    //TIEMPO
+                    Receta.tiempo_preparacion_receta = reader.GetInt32(3);
+                    //INGREDIENTES
+                    Receta.ingredientes = LeerIngredientesReceta(Receta.id);
+                    exito = true;
+                }
+                
+            }
+            catch (Exception ex)
+            {
+                Menus.PausaMensaje("eRROR: " + ex.Message);
+                exito = false;
+            }
+            finally
+            { 
+                connection.Close(); 
+            }
+
+            return exito;
+        }
+
+        public static string LeerIngredientesReceta(int id)
+        {
+            string ingredientes = string.Empty;
+
+            string connectionString = DatosDeConexion();
+            MySqlConnection connection =
+                    new MySqlConnection(connectionString);
+            try
+            {
+                connection.Open();
+                string query = $"SELECT " +
+                    $"ING.nombre_ingrediente, " +
+                    $"RI. cantidad, " +
+                    $"ING.unidad_medida_ingrediente " +
+                    $"FROM ingredientes AS ING " +
+                    $"INNER JOIN recetas_ingredientes AS RI " +
+                    $"ON RI.id_ingrediente = ING.id_ingrediente " +
+                    $"WHERE RI.id_receta = " + id.ToString() + ";";
+
+                MySqlCommand command = new MySqlCommand(query, connection);
+                MySqlDataReader reader = command.ExecuteReader();
+                int n = 0;
+                while (reader.Read())
+                {
+                    if (n != 0) ingredientes += " + ";
+                    ingredientes += reader.GetString(0) + " ";
+                    ingredientes += reader.GetInt32(1).ToString() + "->";
+                    ingredientes += reader.GetString(2);
+                    n++;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            finally         
+            { 
+                connection.Close(); 
+            }
+            return ingredientes;
+        }
+        public static bool ActualizaCantidadTiempoReceta(int id, int tiempo)
+        {
+            bool exito = false;
+            int rowAffected = -1;
+            string connectionString = DatosDeConexion();
+            MySqlConnection connection =
+                    new MySqlConnection(connectionString);
+            try
+            {
+                connection.Open();
+                string query = $"UPDATE recetas set tiempo_preparacion_receta = " + tiempo +
+                    $" WHERE id_receta = " + id + ";";
+
+                MySqlCommand command = new MySqlCommand(query, connection);
+
+                rowAffected = command.ExecuteNonQuery();
+
+                //Verificamos si se insertaron datos correctamente (registros)
+                if (rowAffected == 1)
+                {
+                    Menus.PausaMensaje(rowAffected + " Registros modificados correctamente...");
+                    exito = true;
+                }
+            }
+            catch(Exception ex)
+            {
+                Menus.PausaMensaje("Error: " + ex.Message);
+                exito = false;
+            }
+            finally
+            {
+                connection.Close();
+            }
+            return exito;
+        }
+
+        public static bool BorrarReceta(int recetaBorrada)
+        {
+            bool exito = false;
+            string connectionString = DatosDeConexion();
+
+            //Hacemos una conexion
+            MySqlConnection connection = new MySqlConnection(connectionString);
+
+            try
+            {
+
+                if (connection.State != ConnectionState.Open)
+                {
+                    //abrimos conexion
+                    connection.Open();
+
+                    //hacemos el sql
+                    string sql = "DELETE FROM recetas_ingredientes WHERE id_receta = @recetaElegida;";
+                    sql += "DELETE FROM recetas WHERE id_receta = @recetaElegida;";
+
+                    // nueva conexion mandando los valores a la BDD
+                    MySqlCommand command = new MySqlCommand(sql, connection);
+
+                    // asignamos lo valores a mano para el sql y BDD
+                    command.Parameters.AddWithValue("@recetaElegida", recetaBorrada);
+
+                    //control de errores
+                    int filasAfectadas = command.ExecuteNonQuery();
+
+                    if (filasAfectadas > 0)
+                    {
+                        Menus.PausaMensaje(filasAfectadas + " Regsitros borrados correctamente");
+                        exito = true;
+                    }
+                    else
+                    {
+                        Menus.PausaMensaje("Registros borrados incorrectamente");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Conexion no exitosa por: " + ex);
+            }
+            finally
+            {
+                //Aseguramos de que cerramos la conexion
+                connection.Close();
+            }
+            return exito;
+        }
+    }
+}
